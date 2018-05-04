@@ -1,6 +1,4 @@
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
+from app import db
 
 class User(db.Model):
 	"""
@@ -135,4 +133,37 @@ class OrderDetails(db.Model):
 	def __repr__(self):
 		"""Return a representation of order instance."""
 		return "<OrderDetails: {}>".format(self.meal_name)
+
+class Menu(db.Model):
+	"""
+	Class to represent the menu model
+	"""
+	__tablename__ = 'menus'
+	id  = db.Column(db.Integer, primary_key=True, autoincrement=True)
+	m_name = db.Column(db.String(200), nullable=False)
+	category = db.Column(db.String(200), nullable=False)
+	price = db.Column(db.Float, nullable = False)
+
+	def __init__(self, m_name, category, price):
+		self.m_name = m_name
+		self.category = category
+		self.price = price
+
+	def save(self):
+		"""
+		Persist the menu meal in the database
+		"""
+		db.session.add(self)
+		db.session.commit()
+
+	@staticmethod
+	def get_all():
+		return Menu.query.all()
+
+	def delete(self):
+		db.session.delete(self)
+		db.session.commit()
+
+	def __repr__(self):
+		return "<Menu: {}>".format(self.m_name)
 
