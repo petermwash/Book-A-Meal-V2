@@ -5,13 +5,13 @@ from flask_restful import Resource, Api
 
 """here are my local imports"""
 from instance.config import app_config
-from .models import db
+#from .models import db
 
 """here am initializing sql-alchemy"""
-#db = SQLAlchemy()
+db = SQLAlchemy()
 
 def create_app(config_name):
-	from app.models import User, Meal, Order, OrderDetails
+	from app.models import User, Meal, Order, OrderDetails, Menu
 
 	app = FlaskAPI(__name__, instance_relative_config=True)
 	app.config.from_object(app_config[config_name])
@@ -223,42 +223,40 @@ def create_app(config_name):
 
 	class MenuEndpoints(Resource):
 
-		menu = []
-
 		def get(self):
-			#menu = Menu.query.all() #get_all()
+			menu = Menu.get_all()
 			res = []
 
 			for meal in menu:
-				if not meal:
-					response = jsonify({"message": "No meals available!"})
-					response.status_code = 404
-					return response
 				meal_obj = {
-					'id': meal.id,
-					'm_name': meal.m_name,
-					'category': meal.category,
-					'price': meal.price
-				}
+							meal.id:{
+									'meal_name': meal.m_name,
+									'category': meal.category,
+									'price': meal.price
+									}
+							}
 				res.append(meal_obj)
+			
 			response = jsonify(res)
 			response.status_code = 200
 			return response
 
 		def post(self, meal_id):
-			meals = Meal.query.all()
+			menu = Menu.get_all()
 
-			for meal in meals:
-				for m in  menu:
-					if m.meal_id == meal_id:
-						response = jsonify({"message": "Meal already exists in menu!"})
-						response.status_code = 405
-						return response
-				if meal.meal_id == meal_id:
-					menu.append(meal)
-			response = jsonify({"message": "Meal added to menu"})
-			response.status_code = 201
-			return response
+			if not menu:
+				return jsonify({"message": "No meals available  in menu!"})
+			meal = Meal.query.filter_by(id=meal_id).first()
+			if not meal:
+				response = jsonify({"message": "Meal not available"})
+				response.status_code = 404
+				return response
+			if meal.id == meal_id:
+				menus = Menu(meal.m_name, meal.category, meal.price)
+				menus.save()
+				response = jsonify({"message": "Meal added to menu"})
+				response.status_code = 201
+				return response
 
 
 	api.add_resource(UserSignup, '/api/v2/signup')
