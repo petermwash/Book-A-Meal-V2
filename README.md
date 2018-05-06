@@ -1,5 +1,5 @@
 # Book-A-Meal-V2
-Book-A-Meal-V2 is an improvement to the previous Book-A-Meal  application on my repository the improvement being that the API are secured with JWT and fetches real data from database. It is an application that allows customers to make food orders and helps the food vendor know what the customers want to eat.
+Book-A-Meal-V2 is an improvement to the previous Book-A-Meal  application. The improvement is that, the API are secured with JWT and fetches real data from database. It is an application that allows customers to make food orders and helps the food vendor know what the customers want to eat.
 
 
 ## Technologies used
@@ -7,7 +7,7 @@ Book-A-Meal-V2 is an improvement to the previous Book-A-Meal  application on my 
 * **[Flask](flask.pocoo.org/)** - A microframework for Python based on Werkzeug, Jinja 2.
 * **[Virtualenv](https://virtualenv.pypa.io/en/stable/)** - A tool used to create isolated virtual environments to work on 
 * **[PostgreSQL](https://www.postgresql.org/download/)** – Postgres database which offers a lot of advantages over others as you can find them [here](https://www.postgresql.org/about/advantages/).
-* other dependencies can be found in the requirements.txt file.
+* you can find other dependencies in the requirements.txt file.
 
 
 
@@ -67,7 +67,7 @@ Book-A-Meal-V2 is an improvement to the previous Book-A-Meal  application on my 
     ```
     (venv)$ flask run
     ```
-    You can now access the app on your browser or test the various endpoints using Postman by using the URL
+    You can now access the app on your browser or test the various endpoints using Postman or curl by using the URL bellow.
     ```
     http://localhost:5000/
     ```
