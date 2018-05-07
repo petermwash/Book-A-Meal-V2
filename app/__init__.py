@@ -121,6 +121,11 @@ def create_app(config_name):
 		
 		@token_required
 		def put(current_user, self, id):
+			if not current_user.type_admin:
+				response = jsonify({"message": "Not authorized to perform this function!"})
+				response.status_code = 401
+				return response
+				
 			user = User.query.filter_by(id=id).first()
 
 			if not user:
