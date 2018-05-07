@@ -129,11 +129,7 @@ class MealTestCase(unittest.TestCase):
 					"price":400.00
 					 }
 
-
-		"""
-		Binding the app with the current context
-		and creating all tables
-		"""
+		"""Binding the app with the current context and creating all tables"""
 		with self.app.app_context():
 			db.session.close()
 			db.drop_all()
@@ -171,10 +167,11 @@ class MealTestCase(unittest.TestCase):
 		self.upgrade_user()
 		res = self.login_user()
 		access_token = json.loads(res.data.decode('UTF-8'))['access_token']
+		print (access_token)
 
 		response = self.client().post(
 			'/api/v2/meals', 
-				headers=dict(Authorization="Bearer " + access_token),
+				headers={"x-access-token": access_token},
 				data = json.dumps(
 				self.meal_data) , content_type = 'application/json')
 		
@@ -191,7 +188,7 @@ class MealTestCase(unittest.TestCase):
 
 		response = self.client().post(
 			'/api/v2/meals', 
-			headers=dict(Authorization="Bearer " + access_token),
+			headers={"x-access-token": access_token},
 			data = json.dumps({
 				"meal_category":"Snacks",
 				"meal_price":400.00
@@ -208,7 +205,9 @@ class MealTestCase(unittest.TestCase):
 		access_token = json.loads(res.data.decode())['access_token']
 		
 		response = self.client().post(
-			'/api/v2/meals', data = json.dumps(
+			'/api/v2/meals',
+			headers={"x-access-token": access_token}, 
+			data = json.dumps(
 				self.meal_data), content_type = 'application/json')
 		response = self.client().get('/api/v2/meals')
 		self.assertEqual(response.status_code, 200)
@@ -226,7 +225,9 @@ class MealTestCase(unittest.TestCase):
 					"price":750.00
 					 }
 		res = self.client().post(
-			'/api/v2/meals', data = json.dumps(
+			'/api/v2/meals',
+			headers={"x-access-token": access_token},
+			data = json.dumps(
 				self.meal_data), content_type = 'application/json')
 		self.assertEqual(res.status_code, 201)
 		res = self.client().put(
@@ -244,7 +245,9 @@ class MealTestCase(unittest.TestCase):
 		access_token = json.loads(res.data.decode())['access_token']
 
 		res = self.client().post(
-			'/api/v2/meals', data= json.dumps(
+			'/api/v2/meals',
+			headers={"x-access-token": access_token},
+			data= json.dumps(
 				self.meal_data), content_type = 'application/json')
 		self.assertEqual(res.status_code, 201)
 		result_in_json = json.loads(res.data.decode('utf-8').replace("'", "\""))
@@ -268,6 +271,7 @@ class MealTestCase(unittest.TestCase):
 					}
 		response = self.client().put(
 			'/api/v2/meals/1',
+			headers={"x-access-token": access_token},
 			data = json.dumps(
 				new_data), content_type = 'application/json')
 		res = json.loads(response.data)
@@ -282,7 +286,8 @@ class MealTestCase(unittest.TestCase):
 		res = self.login_user()
 		access_token = json.loads(res.data.decode())['access_token']
 
-		response = self.client().delete('/api/v2/meals/1')
+		response = self.client().delete('/api/v2/meals/1',
+			headers={"x-access-token": access_token},)
 		result = json.loads(response.data)
 		self.assertEqual(result["message"], "Meal deleted!")
 		self.assertEqual(response.status_code, 200)
@@ -302,11 +307,19 @@ class MealTestCase(unittest.TestCase):
 		res = self.login_user()
 		access_token = json.loads(res.data.decode())['access_token']
 
+		data = {
+			"owner": "Pemwa",
+			"meal_name": "pizza",
+			"quantity": 4
+		}
+
 		response = self.client().post(
-			'/api/v2/orders', data = json.dumps(
-				self.meal_data) , content_type = 'application/json')
+			'/api/v2/orders',
+			headers={"x-access-token": access_token},
+			data = json.dumps(
+				data) , content_type = 'application/json')
 		result = json.loads(response.data)
-		self.assertEqual(result["message"], "Order created")
+		self.assertEqual(result["message"], "Order sccesfully posted")
 		self.assertEqual(response.status_code, 201)
 
 	def test_post_a_menu_for_the_day(self):
@@ -324,19 +337,33 @@ class MealTestCase(unittest.TestCase):
 		response = self.app.get('/api/v2/orders')
 		self.assertEqual(response.status_code, 200)
 
-	def test_get_menu_of_the_day(self):
+	def test_get_menu_when_not_set(self):
+		"""Test API cannot get the menu if not set (GET request)."""
+
+		self.register_a_user()
+		res = self.login_user()
+		access_token = json.loads(res.data.decode())['access_token']
+
+		
+		response = self.client().get('/api/v2/menu',
+			headers={"x-access-token": access_token},)
+		self.assertEqual(response.status_code, 404)
+
+	def test_get_menu(self):
 		"""Test API can get the menu (GET request)."""
 
 		self.register_a_user()
 		res = self.login_user()
 		access_token = json.loads(res.data.decode())['access_token']
 
-		response = self.client().post('/api/v2/menu',
+		response = self.client().post('/api/v2/menu/1',
+			headers={"x-access-token": access_token},
 			data = json.dumps(
 				self.meal_data), content_type = 'application/json')
 		self.assertEqual(response.status_code, 201)
-		response = self.app.get('/api/v2/orders')
-		self.assertEqual(response.status_code, 200)
+		response = self.client().get('/api/v2/menu',
+			headers={"x-access-token": access_token})
+		self.assertEqual(response.status_code, 404)
 
 
 	def tearDown(self):
