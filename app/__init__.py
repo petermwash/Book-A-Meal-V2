@@ -207,6 +207,11 @@ def create_app(config_name):
 				response.status_code = 400
 				return response
 
+			if not isinstance(price, float):
+				response = jsonify({"message": "Price has to be a float number!"})
+				response.status_code = 400
+				return response
+
 			meals = Meal.query.all()
 			for meal in meals:
 				if meal.m_name == m_name:
@@ -245,7 +250,12 @@ def create_app(config_name):
 				meal.category = category
 
 			if price is not None:
-				meal.price = price
+				if not isinstance(price, float):
+					response = jsonify({"message": "Price has to be a float number!"})
+					response.status_code = 400
+					return response
+				else:
+					meal.price = price
 
 			meal.save()
 			response = jsonify({"message": "Meal updated"})
@@ -303,6 +313,11 @@ def create_app(config_name):
 				response.status_code = 400
 				return response
 
+			if not isinstance(quantity, int):
+				response = jsonify({"message": "Quantity has to be an integer Number"})
+				response.status_code = 400
+				return response
+
 			order = Order(meal_name, quantity, owner)
 			order.save()
 			response = jsonify({"message": "Order sccesfully posted"})
@@ -353,7 +368,13 @@ def create_app(config_name):
 				abort(404)
 
 			quantity = request.json.get('quantity')
+			
 			if quantity is not None:
+				if not isinstance(quantity, int):
+					response = jsonify({"message": "Quantity has to be an integer Number"})
+					response.status_code = 400
+					return response
+
 				order.quantity = quantity
 
 			order.save()
