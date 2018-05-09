@@ -161,106 +161,41 @@ class MealTestCase(unittest.TestCase):
 	def upgrade_user(self):
 		return self.client().put('/api/v2/upgrade/1')
 
-	def test_meal_addition_to_meal_options(self):
-		"""Test API can add a meal to meal options (POST request)"""
-		self.register_a_user()
-		self.upgrade_user()
-		res = self.login_user()
-		access_token = json.loads(res.data.decode('UTF-8'))['access_token']
-		print (access_token)
-
-		response = self.client().post(
-			'/api/v2/meals', 
-				headers={"x-access-token": access_token},
-				data = json.dumps(
-				self.meal_data) , content_type = 'application/json')
-		
-		result = json.loads(response.data)
-		self.assertEqual(result["message"], "Meal added")
-		self.assertEqual(response.status_code, 201)
-
-	def test_meal_addition_without_one_field(self):
+	def test_meal_addition_by_a_regular_user(self):
+		"""Test API cannot add a meal to meal options by regular user (POST request)"""
 
 		self.register_a_user()
-		self.upgrade_user()
 		res = self.login_user()
 		access_token = json.loads(res.data.decode())['access_token']
 
 		response = self.client().post(
 			'/api/v2/meals', 
 			headers={"x-access-token": access_token},
-			data = json.dumps({
-				"meal_category":"Snacks",
-				"meal_price":400.00
-				}), content_type = 'application/json')
+			data = json.dumps(self.meal_data
+				), content_type = 'application/json')
 		result = json.loads(response.data)
-		self.assertEqual(result["message"], "Missing argument!")
-		self.assertEqual(response.status_code, 400)	
+		self.assertEqual(result["message"], "Not authorized to perform this function!")
+		self.assertEqual(response.status_code, 401)	
 
-	def test_get_all_meals(self):
-		"""Test API can get all meals (GET request)."""
+	def test_get_all_meals_by_regular_user(self):
+		"""Test API cannot get all meals by regular user (GET request)."""
 		self.register_a_user()
-		self.upgrade_user()
 		res = self.login_user()
 		access_token = json.loads(res.data.decode())['access_token']
 		
-		response = self.client().post(
+		response = self.client().get(
 			'/api/v2/meals',
 			headers={"x-access-token": access_token}, 
 			data = json.dumps(
 				self.meal_data), content_type = 'application/json')
-		response = self.client().get('/api/v2/meals')
-		self.assertEqual(response.status_code, 200)
+		result = json.loads(response.data)
+		self.assertEqual(result["message"], "Not authorized to perform this function!")
+		self.assertEqual(response.status_code, 401)
 
-	def test_a_meal_can_be_edited(self):
-		"""Test API can update an existing meal option. (PUT request)"""
-		self.register_a_user()
-		self.upgrade_user()
-		res = self.login_user()
-		access_token = json.loads(res.data.decode())['access_token']
-
-		new_data = {
-					"m_name":"Burger",
-					"category":"Snacks",
-					"price":750.00
-					 }
-		res = self.client().post(
-			'/api/v2/meals',
-			headers={"x-access-token": access_token},
-			data = json.dumps(
-				self.meal_data), content_type = 'application/json')
-		self.assertEqual(res.status_code, 201)
-		res = self.client().put(
-			'/api/v2/meals/1', data = json.dumps(
-				new_data), content_type = 'application/json')
-		self.assertEqual(res.status_code, 200)
-		results = self.client().get('/api/v2/meals/1')
-		self.assertIn(750.00, float(results.data))
-
-	def test_api_can_get_a_meal_by_id(self):
-		"""Test API can get a single meal by using it's id."""
-		self.register_a_user()
-		self.upgrade_user()
-		res = self.login_user()
-		access_token = json.loads(res.data.decode())['access_token']
-
-		res = self.client().post(
-			'/api/v2/meals',
-			headers={"x-access-token": access_token},
-			data= json.dumps(
-				self.meal_data), content_type = 'application/json')
-		self.assertEqual(res.status_code, 201)
-		result_in_json = json.loads(res.data.decode('utf-8').replace("'", "\""))
-		result = self.client().get(
-			'/api/v2/meals/{}'.format(result_in_json['id']))
-		self.assertEqual(result.status_code, 200)
-		self.assertIn('Burger', str(result.data))
-
-	def test_update_a_meal(self):
-		"""Test API can edit an existing meal. (PUT request)"""
+	def test_regular_user_cannot_update_a_meal(self):
+		"""Test API cannot edit an existing meal by a regular user. (PUT request)"""
 
 		self.register_a_user()
-		self.upgrade_user()
 		res = self.login_user()
 		access_token = json.loads(res.data.decode())['access_token']
 
@@ -275,22 +210,21 @@ class MealTestCase(unittest.TestCase):
 			data = json.dumps(
 				new_data), content_type = 'application/json')
 		res = json.loads(response.data)
-		self.assertEqual(res["message"], "Meal updated")
-		self.assertEqual(response.status_code, 200)
+		self.assertEqual(res["message"], "Not authorized to perform this function!")
+		self.assertEqual(response.status_code, 401)
 
-	def test_delete_a_meal(self):
-		"""Test API can delete an existing meal. (DELETE request)"""
+	def test_regular_user_cannot_delete_a_meal(self):
+		"""Test API can delete an existing meal by a regular user. (DELETE request)"""
 
 		self.register_a_user()
-		self.upgrade_user()
 		res = self.login_user()
 		access_token = json.loads(res.data.decode())['access_token']
 
 		response = self.client().delete('/api/v2/meals/1',
 			headers={"x-access-token": access_token},)
 		result = json.loads(response.data)
-		self.assertEqual(result["message"], "Meal deleted!")
-		self.assertEqual(response.status_code, 200)
+		self.assertEqual(result["message"], "Not authorized to perform this function!")
+		self.assertEqual(response.status_code, 401)
 
 	def tearDown(self):
 		"""teardown all initialized variables."""
@@ -303,7 +237,6 @@ class MealTestCase(unittest.TestCase):
 		"""Test API can make an order (POST request)."""
 
 		self.register_a_user()
-		self.upgrade_user()
 		res = self.login_user()
 		access_token = json.loads(res.data.decode())['access_token']
 
@@ -322,20 +255,20 @@ class MealTestCase(unittest.TestCase):
 		self.assertEqual(result["message"], "Order sccesfully posted")
 		self.assertEqual(response.status_code, 201)
 
-	def test_post_a_menu_for_the_day(self):
-		"""Test API can post the menu (POST request)."""
+	def test_regular_user_cannot_post_a_menu_for_the_day(self):
+		"""Test API cannot post the menu by a regular user (POST request)."""
 
 		self.register_a_user()
-		self.upgrade_user()
 		res = self.login_user()
 		access_token = json.loads(res.data.decode())['access_token']
 
-		response = self.client().post('/api/v2/menu',
+		response = self.client().post('/api/v2/menu/1',
+			headers={"x-access-token": access_token},
 			data = json.dumps(
 				self.meal_data), content_type = 'application/json')
-		self.assertEqual(response.status_code, 201)
-		response = self.app.get('/api/v2/orders')
-		self.assertEqual(response.status_code, 200)
+		result = json.loads(response.data)
+		self.assertEqual(result["message"], "Not authorized to perform this function!")
+		self.assertEqual(response.status_code, 401)
 
 	def test_get_menu_when_not_set(self):
 		"""Test API cannot get the menu if not set (GET request)."""
@@ -348,23 +281,6 @@ class MealTestCase(unittest.TestCase):
 		response = self.client().get('/api/v2/menu',
 			headers={"x-access-token": access_token},)
 		self.assertEqual(response.status_code, 404)
-
-	def test_get_menu(self):
-		"""Test API can get the menu (GET request)."""
-
-		self.register_a_user()
-		res = self.login_user()
-		access_token = json.loads(res.data.decode())['access_token']
-
-		response = self.client().post('/api/v2/menu/1',
-			headers={"x-access-token": access_token},
-			data = json.dumps(
-				self.meal_data), content_type = 'application/json')
-		self.assertEqual(response.status_code, 201)
-		response = self.client().get('/api/v2/menu',
-			headers={"x-access-token": access_token})
-		self.assertEqual(response.status_code, 404)
-
 
 	def tearDown(self):
 		"""teardown all initialized variables."""
