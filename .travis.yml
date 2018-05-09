@@ -1,0 +1,18 @@
+language: python
+python:
+    - "3.6"
+
+#to install dependancies
+install:
+    - pip install -r requirements.txt
+
+#to run tests
+script:
+    - nosetests tests
+
+#to run coverage tests
+after_success:
+    - coverage run --source='.' test_api.py
+    - coveralls
+cache:
+    - pip
