@@ -8,7 +8,7 @@ install:
 
 #to run tests
 script:
-    - nosetests test_test_api.py
+    - nosetests test_api.py
 
 #to run coverage tests
 after_success:
