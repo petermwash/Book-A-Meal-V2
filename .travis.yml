@@ -6,6 +6,10 @@ python:
 install:
     - pip install -r requirements.txt
 
+#creating test_db
+before_script:
+    - psql -c 'create database test_db;' -U postgres
+
 #to run tests
 script:
     - nosetests test_api.py
