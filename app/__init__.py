@@ -414,6 +414,18 @@ def create_app(config_name):
 			meal_name = request.json.get('meal_name')
 			quantity = request.json.get('quantity')
 
+			today8am = datetime.datetime.now().replace(
+				hour=8, minute=0, second=0, microsecond=0)
+			today12am = datetime.datetime.now().replace(
+				hour=0, minute=0, second=0, microsecond=0)
+			if datetime.datetime.now() > today12am and\
+					datetime.datetime.now() < today8am:
+				response = jsonify(
+					{"message": "This functionality not available at this time"}
+					)
+				response.status_code = 404
+				return response
+
 			if owner is None or quantity is None or meal_name is None: 
 				response = jsonify({"message": "Missing argument"})
 				response.status_code = 400
@@ -469,9 +481,23 @@ def create_app(config_name):
 				response = jsonify({"message": "Not authorized to perform this function!"})
 				response.status_code = 401
 				return response
+
+			today8am = datetime.datetime.now().replace(
+				hour=8, minute=0, second=0, microsecond=0)
+			today12am = datetime.datetime.now().replace(
+				hour=0, minute=0, second=0, microsecond=0)
+			if datetime.datetime.now() > today12am and\
+					datetime.datetime.now() < today8am:
+				response = jsonify(
+					{"message": "This functionality not available at this time"}
+					)
+				response.status_code = 404
+				return response
 			
 			if not order:
-				abort(404)
+				response = jsonify({"message": "That order is not available"})
+				response.status_code = 404
+				return response
 
 			quantity = request.json.get('quantity')
 			
