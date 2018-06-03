@@ -98,7 +98,7 @@ def create_app(config_name):
 			
 			if not u_name or not password:
 				response = jsonify({"message": "can\'t verify"})
-				response.status_code = 401
+				response.status_code = 400
 				return response
 
 			current_user = User.query.filter_by(u_name=u_name).first()
@@ -183,7 +183,7 @@ def create_app(config_name):
 				}
 				uzers.append(u)
 
-			return uzers
+			return jsonify(uzers),200
 	class ChangePasswordAPI(Resource):
 		"""This resource is for changing the old password to the new password"""
 
@@ -195,15 +195,15 @@ def create_app(config_name):
 				response = jsonify({"message": "Missing argument!"})
 				response.status_code = 400
 				return response
-			#user = User.query.filter_by(id=current_user.id).first()
-			if not check_password_hash(current_user.password, old_password):
+			user = User.query.filter_by(id=current_user.id).first()
+			if not check_password_hash(user.password, old_password):
 				response = jsonify({"message": "Old password is not correct!"})
 				response.status_code = 401
 				return response
 
-			current_user.hashed_pasword = generate_password_hash(
+			user.password = generate_password_hash(
 				new_password, method='sha256')
-			current_user.save()
+			user.save()
 
 			response = jsonify({"message": "Password changed Successfully"})
 			response.status_code = 200
@@ -549,6 +549,8 @@ def create_app(config_name):
 	api.add_resource(UpgradeUser, '/api/v2/upgrade/<int:id>')
 	api.add_resource(Users, '/api/v2/users')
 	api.add_resource(UserLogout, '/api/v2/auth/logout')
+	api.add_resource(ChangePasswordAPI, '/api/v2/auth/changepass')
+	api.add_resource(ForgetPasswordAPI, '/api/v2/auth/resetpass')
 
 
 	return app
