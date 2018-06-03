@@ -14,7 +14,7 @@ class BaseTest(unittest.TestCase):
 
 	def login_user(self):
 		with self.app.app_context():
-			"""creating a tempu user admin"""
+			"""creating a temp user"""
 			user = User(
 				public_id=str(uuid.uuid4()),
 				f_name='Peter',
