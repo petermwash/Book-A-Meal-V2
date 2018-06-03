@@ -12,11 +12,11 @@ before_script:
 
 #to run tests
 script:
-    - nosetests test_api.py
+    - nosetests tests
 
 #to run coverage tests
 after_success:
-    - coverage run --source='.' --omit='run.py','manage.py' test_api.py
+    - coverage run --source='.' --omit='run.py','manage.py' tests
     - coveralls
 cache:
     - pip
