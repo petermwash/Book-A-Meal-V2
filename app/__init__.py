@@ -6,6 +6,7 @@ import jwt
 import datetime
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
+import random
 
 """here are my local imports"""
 from instance.config import app_config
@@ -15,7 +16,7 @@ from instance.config import app_config
 db = SQLAlchemy()
 
 def create_app(config_name):
-	from app.models import User, Meal, Order, Menu
+	from app.models import User, Meal, Order, Menu, BlacklistToken
 
 	app = Flask(__name__)
 	app.config.from_object(app_config[config_name])
@@ -34,6 +35,13 @@ def create_app(config_name):
 
 		 	if not access_token:
 		 		response = jsonify({"message": "Token is  mising!. You need to sign in first"})
+		 		response.status_code = 401
+		 		return response
+
+		 	"""Check if the access_token is blacklisted"""
+		 	is_blacklisted_token = BlacklistToken.check_token_blacklist(access_token)
+		 	if is_blacklisted_token:
+		 		response = jsonify({"message": "User is logged out! You need to sign in again"})
 		 		response.status_code = 401
 		 		return response
 
@@ -87,9 +95,7 @@ def create_app(config_name):
 		def post(self):
 			u_name = request.json.get('u_name')
 			password = request.json.get('password')
-			#auth = request.authorization
-
-			#if not auth or not auth.username or not auth.password:
+			
 			if not u_name or not password:
 				response = jsonify({"message": "can\'t verify"})
 				response.status_code = 401
@@ -113,6 +119,24 @@ def create_app(config_name):
 			else:
 				response = jsonify({"message": "Wrong password or username!"})
 				response.status_code = 401
+				return response
+
+	class UserLogout(Resource):
+		"""This class contains the logout resource"""
+
+		@token_required
+		def post(current_user, self):
+			auth_token = request.headers['x-access-token']
+			blacklist_token = BlacklistToken(token=auth_token)
+			try:
+				blacklist_token.add()
+				response = jsonify({"message": "Successfully logged out."})
+				response.status_code = 200
+				return response
+
+			except Exception as e:
+				response = jsonify({"message": e})
+				response.status_code = 200
 				return response
 
 
@@ -160,9 +184,91 @@ def create_app(config_name):
 				uzers.append(u)
 
 			return uzers
+	class ChangePasswordAPI(Resource):
+		"""This resource is for changing the old password to the new password"""
+
+		@token_required
+		def post(current_user, self):
+			old_password = request.json.get('old_password')
+			new_password = request.json.get('new_password')
+			if old_password is None or new_password is None:
+				response = jsonify({"message": "Missing argument!"})
+				response.status_code = 400
+				return response
+			#user = User.query.filter_by(id=current_user.id).first()
+			if not check_password_hash(current_user.password, old_password):
+				response = jsonify({"message": "Old password is not correct!"})
+				response.status_code = 401
+				return response
+
+			current_user.hashed_pasword = generate_password_hash(
+				new_password, method='sha256')
+			current_user.save()
+
+			response = jsonify({"message": "Password changed Successfully"})
+			response.status_code = 200
+			return response
+
+	class ForgetPasswordAPI(Resource):
+		"""This class contains resources to reset forgotten password"""
+
+		def get(self):
+			"""Reset user's password and return the temporary password"""
+			
+			if 'x-access-token' in request.headers:
+				reset_token = request.headers['x-access-token']
+
+			if not reset_token:
+				response = jsonify({"message": "Token is  mising!"})
+				response.status_code = 400
+				return response
+
+			try:
+				data = jwt.decode(reset_token, app.config['SECRET_KEY'])
+				user = User.query.filter_by(public_id=data['public_id']).first()
+
+			except:
+				response = jsonify({"message": "Token is invalid!"})
+				response.status_code = 401
+				return response
+
+			temp_password = (''.join(str(random.randint(0, 9)) for x in range(8)))
+			user.hashed_pasword = generate_password_hash(temp_password)
+			user.save()
+
+			response = jsonify({
+		 		"message": "Your temporary password is: {}".format(
+		 			temp_password)})
+			response.status_code = 200
+			return response
+
+		def post(self):
+			"""
+			Verify the information from user and
+			Return a reset token if the information is correct
+			"""
+			email = request.json.get('email')
+			if email is None:
+				response = jsonify({"message": "Missing argument!"})
+				response.status_code = 400
+				return response
+
+			user = User.query.filter_by(email=email).first()
+			if user is None:
+				response = jsonify({"message": "No user associated with the email!"})
+				response.status_code = 401
+				return response
+
+			reset_token = jwt.encode({'public_id': user.public_id, 'exp': datetime.datetime.utcnow()
+					+ datetime.timedelta(minutes=5)}, app.config['SECRET_KEY'])
+			response = jsonify({
+					"message": "Reset token returned to let you reset password",
+					"Reset_token": reset_token.decode('UTF-8')})
+			response.status_code = 200
+			return response
 
 	class Meals(Resource):
-		"""This class contains resources for maniputating meals"""
+		"""This class contains resources for manipulating meals"""
 
 		@token_required
 		def get(current_user, self):
@@ -320,7 +426,7 @@ def create_app(config_name):
 
 			order = Order(meal_name, quantity, owner)
 			order.save()
-			response = jsonify({"message": "Order sccesfully posted"})
+			response = jsonify({"message": "Order succesfully posted"})
 			response.status_code = 201
 			return response
 
@@ -440,8 +546,9 @@ def create_app(config_name):
 	api.add_resource(SingleMeal, '/api/v2/meals/<int:meal_id>')
 	api.add_resource(MenuEndpoints, '/api/v2/menu', '/api/v2/menu/<int:meal_id>')
 	api.add_resource(OrderEndpoints, '/api/v2/orders', '/api/v2/orders/<int:order_id>')
-	api.add_resource(UpgradeUser, '/api/v2/upgrade/<int:id>',)
+	api.add_resource(UpgradeUser, '/api/v2/upgrade/<int:id>')
 	api.add_resource(Users, '/api/v2/users')
+	api.add_resource(UserLogout, '/api/v2/auth/logout')
 
 
 	return app
