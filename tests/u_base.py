@@ -53,6 +53,19 @@ class BaseTest(unittest.TestCase):
 				}) , 
 			content_type = 'application/json')
 
+	def create_a_user(self):
+		with self.app.app_context():
+			"""creating a temp user"""
+			user = User(
+				public_id=str(uuid.uuid4()),
+				f_name='Peter',
+				l_name='Mwaura',
+				u_name='carl',
+				email='carl@gm.com',
+				password= generate_password_hash('12345', method='sha256')
+				)
+			user.save()
+
 	def tearDown(self):
 		"""teardown all initialized variables."""
 		with self.app.app_context():

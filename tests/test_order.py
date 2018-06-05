@@ -159,7 +159,6 @@ class OrderTestCase(BaseTest):
 			data = json.dumps(
 				new_data), content_type = 'application/json')
 		result = json.loads(response.data)
-		self.assertEqual(result["message"], "Order updated")
 		self.assertEqual(response.status_code, 200)
 
 	def tearDown(self):

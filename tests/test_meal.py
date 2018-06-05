@@ -116,7 +116,9 @@ class MealTestCase(BaseTest):
 			data= json.dumps(
 				self.meal_data), content_type = 'application/json')
 		self.assertEqual(res.status_code, 201)
+
 		result_in_json = json.loads(res.data.decode('utf-8').replace("'", "\""))
+		
 		result = self.client().get(
 			'/api/v2/meals/1',
 			headers={"x-access-token": access_token})
