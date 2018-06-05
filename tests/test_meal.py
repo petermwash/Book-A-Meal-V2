@@ -67,9 +67,7 @@ class MealTestCase(BaseTest):
 		
 		response = self.client().get(
 			'/api/v2/meals',
-			headers={"x-access-token": access_token}, 
-			data = json.dumps(
-				self.meal_data), content_type = 'application/json')
+			headers={"x-access-token": access_token}
 		result = json.loads(response.data)
 		self.assertEqual(result["message"], "Not authorized to perform this function!")
 		self.assertEqual(response.status_code, 401)
