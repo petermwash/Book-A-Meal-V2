@@ -61,7 +61,7 @@ class BlacklistToken(db.Model):
 
 	@staticmethod
 	def check_token_blacklist(auth_token):
-		"""The method checks whwther token has been blacklisted"""
+		"""The method checks whether token has been blacklisted"""
 		result = BlacklistToken.query.filter_by(token=str(auth_token)).first()
 		if result:
 			return True

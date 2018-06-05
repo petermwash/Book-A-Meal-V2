@@ -25,6 +25,12 @@ def create_app(config_name):
 	api = Api(app)
 	db.init_app(app)
 
+	def generate_token(public_id, time):
+		token = jwt.encode(
+			{'public_id':public_id, 'exp': datetime.datetime.utcnow()
+			+ datetime.timedelta(minutes=time)}, app.config['SECRET_KEY'])
+		return token
+
 	def token_required(f):
 		 @wraps(f)
 		 def decorated(*args, **kwargs):
@@ -109,8 +115,11 @@ def create_app(config_name):
 				return response
 
 			if check_password_hash(current_user.password, password):
-				access_token = jwt.encode({'public_id': current_user.public_id, 'exp': datetime.datetime.utcnow()
-					+ datetime.timedelta(minutes=30)}, app.config['SECRET_KEY'])
+				access_token = generate_token(current_user.public_id, 30)
+				"""
+				access_token = jwt.encode(
+					{'public_id': current_user.public_id, 'exp': datetime.datetime.utcnow()
+					+ datetime.timedelta(minutes=30)}, app.config['SECRET_KEY'])"""
 				response = jsonify({
 					"message": "Logged in as {}".format(current_user.u_name),
 					"access_token": access_token.decode('UTF-8')})
@@ -128,6 +137,7 @@ def create_app(config_name):
 		def post(current_user, self):
 			auth_token = request.headers['x-access-token']
 			blacklist_token = BlacklistToken(token=auth_token)
+			
 			try:
 				blacklist_token.add()
 				response = jsonify({"message": "Successfully logged out."})
@@ -159,7 +169,14 @@ def create_app(config_name):
 
 			user.type_admin = True
 			user.save()
-			response = jsonify({"message": "User {} promoted to admin".format(user.u_name)})
+			response = jsonify({
+				"message": "User {} promoted to admin".format(user.u_name)},
+				{
+					"id": user.id,
+					"u_name": user.u_name,
+					"public_id": user.public_id,
+					"type_admin": user.type_admin
+					})
 			response.status_code = 200
 			return response
 
@@ -168,12 +185,19 @@ def create_app(config_name):
 		
 		@token_required
 		def get(current_user, self):
+			if not current_user.type_admin:
+				response = jsonify({"message": "Not authorized to perform this function!"})
+				response.status_code = 401
+				return response
+
 			users = User.query.all()
 			uzers = []
 
 			for user in users:
 				if not user:
-					return jsonify({"message": "No user found!"})
+					response = jsonify({"message": "No user found!"})
+					response.status_code = 404
+					return response
 
 				u = {
 					"id": user.id,
@@ -183,7 +207,10 @@ def create_app(config_name):
 				}
 				uzers.append(u)
 
-			return jsonify(uzers),200
+			response = jsonify(uzers)
+			response.status_code = 200
+			return response
+			
 	class ChangePasswordAPI(Resource):
 		"""This resource is for changing the old password to the new password"""
 
@@ -191,10 +218,12 @@ def create_app(config_name):
 		def post(current_user, self):
 			old_password = request.json.get('old_password')
 			new_password = request.json.get('new_password')
+
 			if old_password is None or new_password is None:
 				response = jsonify({"message": "Missing argument!"})
 				response.status_code = 400
 				return response
+
 			user = User.query.filter_by(id=current_user.id).first()
 			if not check_password_hash(user.password, old_password):
 				response = jsonify({"message": "Old password is not correct!"})
@@ -233,7 +262,7 @@ def create_app(config_name):
 				return response
 
 			temp_password = (''.join(str(random.randint(0, 9)) for x in range(8)))
-			user.hashed_pasword = generate_password_hash(temp_password)
+			user.password = generate_password_hash(temp_password)
 			user.save()
 
 			response = jsonify({
@@ -256,11 +285,10 @@ def create_app(config_name):
 			user = User.query.filter_by(email=email).first()
 			if user is None:
 				response = jsonify({"message": "No user associated with the email!"})
-				response.status_code = 401
+				response.status_code = 404
 				return response
 
-			reset_token = jwt.encode({'public_id': user.public_id, 'exp': datetime.datetime.utcnow()
-					+ datetime.timedelta(minutes=5)}, app.config['SECRET_KEY'])
+			reset_token = generate_token(user.public_id, 5)
 			response = jsonify({
 					"message": "Reset token returned to let you reset password",
 					"Reset_token": reset_token.decode('UTF-8')})
@@ -285,6 +313,7 @@ def create_app(config_name):
 					response = jsonify({"message": "No meals available!"})
 					response.status_code = 404
 					return response
+
 				meal_obj = {
 					'id': meal.id,
 					'm_name': meal.m_name,
@@ -292,6 +321,7 @@ def create_app(config_name):
 					'price': meal.price
 				}
 				res.append(meal_obj)
+
 			response = jsonify(res)
 			response.status_code = 200
 			return response
@@ -343,11 +373,19 @@ def create_app(config_name):
 
 			meal = Meal.query.filter_by(id=meal_id).first()
 			if not meal:
-				abort(404)
+				response = jsonify({"message": "The meal does not exist"})
+				response.status_code = 404
+				return response
 
 			m_name = request.json.get('m_name')
 			category = request.json.get('category')
 			price = request.json.get('price')
+
+			if m_name is None and category is None and price is None:
+				response = jsonify(
+					{"message": "You need to provide at least one argument!"})
+				response.status_code = 400
+				return response
 
 			if m_name is not None:
 				meal.m_name = m_name
@@ -364,7 +402,14 @@ def create_app(config_name):
 					meal.price = price
 
 			meal.save()
-			response = jsonify({"message": "Meal updated"})
+
+			response = jsonify({"message": "Meal updated"},
+				{
+				'id': meal.id,
+				'm_name': meal.m_name,
+				'category': meal.category,
+				'price': meal.price
+				})
 			response.status_code = 200
 			return response
 
@@ -377,7 +422,9 @@ def create_app(config_name):
 
 			meal = Meal.query.filter_by(id=meal_id).first()
 			if not meal:
-				abort(404)
+				response = jsonify({"message": "The meal does not exist"})
+				response.status_code = 404
+				return response
 
 			response = jsonify({
 				'id': meal.id,
@@ -397,9 +444,12 @@ def create_app(config_name):
 			
 			meal = Meal.query.filter_by(id=meal_id).first()
 			if not meal:
-				abort(404)
+				response = jsonify({"message": "The meal does not exist"})
+				response.status_code = 404
+				return response
 
 			meal.delete()
+
 			response = jsonify({"message": "Meal deleted!"})
 			response.status_code = 200
 			return response
@@ -410,7 +460,7 @@ def create_app(config_name):
 		@token_required
 		def post(current_user, self):
 			
-			owner = request.json.get('owner')
+			#owner = request.json.get('owner')
 			meal_name = request.json.get('meal_name')
 			quantity = request.json.get('quantity')
 
@@ -426,7 +476,7 @@ def create_app(config_name):
 				response.status_code = 404
 				return response
 
-			if owner is None or quantity is None or meal_name is None: 
+			if quantity is None or meal_name is None: 
 				response = jsonify({"message": "Missing argument"})
 				response.status_code = 400
 				return response
@@ -436,8 +486,10 @@ def create_app(config_name):
 				response.status_code = 400
 				return response
 
+			owner = current_user.u_name
 			order = Order(meal_name, quantity, owner)
 			order.save()
+
 			response = jsonify({"message": "Order succesfully posted"})
 			response.status_code = 201
 			return response
@@ -461,8 +513,8 @@ def create_app(config_name):
 				meal_obj = {order.owner: {
 										'meal_name': order.meal_name,
 										'quantity': order.quantity
-
-										}
+										},
+							'ordered_on': order.ordered_on
 					
 							}
 				res.append(meal_obj)
@@ -477,7 +529,7 @@ def create_app(config_name):
 			me = User.query.filter_by(u_name=current_user.u_name).first()
 			order = Order.query.filter_by(id=order_id).first()
 
-			if not me:
+			if me.u_name != order.owner:
 				response = jsonify({"message": "Not authorized to perform this function!"})
 				response.status_code = 401
 				return response
@@ -500,17 +552,35 @@ def create_app(config_name):
 				return response
 
 			quantity = request.json.get('quantity')
+			meal_name = request.json.get('meal_name')
+
+			if quantity is None and meal_name is None:
+				response = jsonify(
+					{"message": "You need to provide at least one argument!"})
+				response.status_code = 400
+				return response
 			
 			if quantity is not None:
 				if not isinstance(quantity, int):
-					response = jsonify({"message": "Quantity has to be an integer Number"})
+					response = jsonify(
+						{"message": "Quantity has to be an integer Number"})
 					response.status_code = 400
 					return response
-
 				order.quantity = quantity
 
+			if meal_name is not None:
+				order.meal_name =meal_name
+
 			order.save()
-			response = jsonify({"message": "Order updated"})
+
+			response = jsonify({"message": "Order updated"},
+				{order.owner: {
+										'meal_name': order.meal_name,
+										'quantity': order.quantity
+										},
+								'ordered_on': order.ordered_on
+					
+							})
 			response.status_code = 200
 			return response
 
