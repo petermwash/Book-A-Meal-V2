@@ -1,0 +1,6 @@
+app/__pycache__/ instance/__pycache__/ migrations/__pycache__/ tests/__pycache__/
+app/__pycache__/
+instance/__pycache__/
+tests/__pycache__/
+venv/
+.coverage
