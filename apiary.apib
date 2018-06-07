@@ -1,0 +1,990 @@
+FORMAT: 2A
+HOST: http://pmbookameal-api.herokuapp.com
+
+# Book-A-Meal-v2
+
+Book-A-Meal is a simple API allowing consumers to view the schema for the inputs and outputs of data.
+
+## User Registration [/api/v2/auth/signup]
+
+### Register a user [POST]
+
++ Request (application/json)
+
+
+        {
+                        "f_name": "Peter",
+                        "l_name": "Mwaura",
+                        "email": "pemwa@me.com",
+                        "u_name": "pemwa"'
+                        "password": "mypass"
+                    } 
+
+
++ Response 201 (application/json)
+
+            {
+            "meassage": "User created"
+            }
+            
++ Response 202 (application/json)
+
+            {
+            "meassage": "User already exists!"
+            }
+           
++ Response 400 (application/json)
+
+            {
+            "meassage": "Missing argument"
+            }
+
+## User Signin [/api/v2/auth/login]
+
+### Sign in user [POST]
+
++ Request (application/json)
+
+        {
+                        
+                        "u_name": "pemwa",
+                        "password": "mypass"
+                    } 
+
+
++ Response 200 (application/json)
+
+            {
+                "meassage": "Logged in as pemwa",
+                "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1MDM0ODQ5OTYsImlhdCI6MTUwMzM5ODU4Niwic3ViIjo1fQ.GC6IEOohdo_xrz9__UeugIlir0qtJdKbEzBtLgqjt5A"
+            }
+            
++ Response 400 (application/json)
+
+            {
+                "meassage": "can't verify"
+                
+            }
+            
++ Response 404 (application/json)
+
+            {
+                "meassage": "User pemwa doesn't exist"
+                
+            }
+
++ Response 401 (application/json)
+
+            {
+                "meassage": "Wrong password or username!"
+                
+            }
+
+## User Logout [/api/v2/auth/logout]
+
+### Log out a user [POST]
+
+
++ Request (application/json)
+
+    + Headers
+
+            x-access-token: JWT Token
+
++ Response 200 (application/json)
+
+        {
+            "message": "Successfully logged out."
+        }
+
+
++ Response 401 (application/json)
+
+        {
+          "message": "Token is  mising!. You need to sign in first"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "User is logged out! You need to sign in again"
+        }
+        
++ Response 401 (application/json)
+
+        {
+          "message": "Token is invalid!. You need to sign in first"
+        }
+        
+## User upgrade [/api/v2/upgrade{user_id}]
+
+### Upgrade a user [PUT]
+This operation can be performed only by an admin user.
+
++ Request (application/json)
+
+    + Headers
+
+            x-access-token: JWT Token
+
++ Response 200 (application/json)
+
+        {
+            "message": "User pemwa promoted to admin"
+        },
+        {
+            "id": 1,
+            "u_name": "pemwa",
+            "public_id": "eghas66t744bc",
+            "type_admin": True
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Not authorized to perform this function!"
+        }
+
++ Response 404 (application/json)
+
+            {
+                "meassage": "User pemwa doesn't exist"
+                
+            }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Token is  mising!. You need to sign in first"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "User is logged out! You need to sign in again"
+        }
+        
++ Response 401 (application/json)
+
+        {
+          "message": "Token is invalid!. You need to sign in first"
+        }
+
+## Users [/api/v2/users]
+
+### get all users [GET]
+This operation can be performed only by an admin user.
+
++ Request (application/json)
+
+    + Headers
+
+            x-access-token: JWT Token
+
++ Response 200 (application/json)
+
+        [
+            {
+                "id": 1,
+                "u_name": "pemwa",
+                "public_id": "eghas66t744bc",
+                "type_admin": True
+            },
+            {
+                "id": 2,
+                "u_name": "mwash",
+                "public_id": "eghas66t744bc",
+                "type_admin": False
+            },
+            {
+                "id": 3,
+                "u_name": "reann",
+                "public_id": "eghas66t744bc",
+                "type_admin": False
+            },
+            {
+                "id": 4,
+                "u_name": "eve",
+                "public_id": "eghas66t744bc",
+                "type_admin": False
+            }
+        ]
+
++ Response 404 (application/json)
+
+        {
+          "message": "No user found!"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Not authorized to perform this function!"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Token is  mising!. You need to sign in first"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "User is logged out! You need to sign in again"
+        }
+        
++ Response 401 (application/json)
+
+        {
+          "message": "Token is invalid!. You need to sign in first"
+        }
+
+### Create super admin user [POST]
+This operation is called only once to create the super admin user and any other call to thiss resource will not create another user.
+
+
++ Response 200 (application/json)
+            
+        {
+            "message": "Super admin user created"
+        }
+
++ Response 202 (application/json)
+            
+        {
+            "message": "Super admin user already exists!"
+        }
+
+## Change password [/api/v2/auth/changepass]
+
+### Change user password [POST]
+
++ Request (application/json)
+
+    + Headers
+
+            x-access-token: JWT Token
+    
+    + Body
+            
+            {
+                "old_password": "currentpass",
+                "new_password": "mynewpass"
+            }
+
++ Response 200 (application/json)
+
+        {
+            "message": "Password changed Successfully"
+        }
+        
++ Response 401 (application/json)
+
+        {
+            "message": "Old password is not correct!"
+        }
+
++ Response 400 (application/json)
+
+        {
+            "message": "Missing argument!"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Token is  mising!. You need to sign in first"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "User is logged out! You need to sign in again"
+        }
+        
++ Response 401 (application/json)
+
+        {
+          "message": "Token is invalid!. You need to sign in first"
+        }
+
+## Forget password [/api/v2/auth/resetpass]
+
+### Get a password reset token [POST]
+
++ Request (application/json)
+
+            
+        {
+            "email": "pemwa@me.com"
+        }
+
++ Response 200 (application/json)
+
+        {
+            "message": "Reset token returned to let you reset password",
+            "Reset_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1MDM0ODQ5OTYsImlhdCI6MTUwMzM5ODU4Niwic3ViIjo1fQ.GC6IEOohdo_xrz9__UeugIlir0qtJdKbEzBtLgqjt5A"
+        }
+        
++ Response 404 (application/json)
+
+        {
+            "message": "No user associated with the email!"
+        }
+
++ Response 400 (application/json)
+
+        {
+            "message": "Missing argument!"
+        }
+
+### Get a temporary reset password [GET]
+
++ Request (application/json)
+
+    + Headers
+
+            x-access-token: JWT Token
+
++ Response 200 (application/json)
+
+        {
+            "message": "Your temporary password is 59873458"
+        }
++ Response 400 (application/json)
+
+        {
+            "message": "Token is  mising!"
+        }
+
++ Response 401 (application/json)
+
+        {
+            "message": "Token is invalid!"
+        }
+
+
+## Meals Resources [/api/v2/meals]
+
+### Create meal options [POST]
+This operation can be performed only by an admin user.
+
++ Request (application/json)
+
+    + Headers
+
+            x-access-token: JWT Token
+    
+    + Body
+                
+            {
+                "meal_name": "burger",
+                "meal_category": "snacks",
+                "meal_price": 400.00
+            }
+
++ Response 200 (application/json)
+
+            {
+                "message": "Meal added"
+            }
+
++ Response 401 (application/json)
+
+        {
+            "message": "Not authorized to perform this function!"
+        }
+
++ Response 400 (application/json)
+
+        {
+            "message": "Missing argument!"
+        }
+
++ Response 400 (application/json)
+
+        {
+            "message": "Price has to be a float number!"
+        }
++ Response 405 (application/json)
+
+        {
+            "message": "Meal already exists!"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Token is  mising!. You need to sign in first"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "User is logged out! You need to sign in again"
+        }
+        
++ Response 401 (application/json)
+
+        {
+          "message": "Token is invalid!. You need to sign in first"
+        }
+
+### Get the meal options [GET]
+This operation can be performed only by an admin user.
+
++ Request (application/json)
+
+    + Headers
+
+            x-access-token: JWT Token
+
++ Response 200 (application/json)
+
+        [
+                
+                    {
+                        "meal_id": 5,
+                        "meal_name": "burger",
+                        "meal_category": "snacks",
+                        "meal_price": 400.00
+                    }, {
+                        "meal_id": 8,
+                        "meal_name": "pizza",
+                        "meal_category": "main dish",
+                        "meal_price": 900.00
+                    }, {
+                        "meal_id": 15,
+                        "meal_name": "wine",
+                        "meal_category": "drinks",
+                        "meal_price": 850.00
+                    }, {
+                        "meal_id": 2,
+                        "meal_name": "beef",
+                        "meal_category": "main dish",
+                        "meal_price": 700.00
+                    }
+        ]
+
++ Response 401 (application/json)
+
+        {
+            "message": "Not authorized to perform this function!"
+        }
++ Response 404 (application/json)
+
+        {
+            "message": "No meals available!"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Token is  mising!. You need to sign in first"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "User is logged out! You need to sign in again"
+        }
+        
++ Response 401 (application/json)
+
+        {
+          "message": "Token is invalid!. You need to sign in first"
+        }
+
+## Single meal Resources [/api/v2/meals/{meal_id}]
+        
+### Update a meal options [PUT]
+This operation can be performed only by an admin user.
+
++ Request (application/json)
+
+    + Headers
+
+            x-access-token: JWT Token
+    
+    + Body
+
+            {
+                "meal_name": "burger",
+                "meal_category": "snacks",
+                "meal_price": 400.00
+            }
+                    
++ Response 200 (application/json)
+
+            
+            {
+                "Message": "Meal updated"
+            },
+            {
+                "meal_id": 2,
+                "meal_name": "burger",
+                "meal_category": "snacks",
+                "meal_price": 400.00
+            }
+
++ Response 401 (application/json)
+
+        {
+            "message": "Not authorized to perform this function!"
+        }
+
++ Response 404 (application/json)
+
+        {
+            "message": "The meal does not exist"
+        }
+
++ Response 400 (application/json)
+
+        {
+            "message": "You need to provide at least one argument!"
+        }
+
++ Response 400 (application/json)
+
+        {
+            "message": "Price has to be a float number!"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Token is  mising!. You need to sign in first"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "User is logged out! You need to sign in again"
+        }
+        
++ Response 401 (application/json)
+
+        {
+          "message": "Token is invalid!. You need to sign in first"
+        }
+
+### Delete a meal option [DELETE]
+This operation can be performed only by an admin user.
+
++ Request (application/json)
+
+    + Headers
+
+            x-access-token: JWT Token
+
++ Response 200 (application/json)
+
+            
+            {
+                "Message": "Meal deleted!"
+                
+            }
+
++ Response 401 (application/json)
+
+        {
+            "message": "Not authorized to perform this function!"
+        }
+
++ Response 404 (application/json)
+
+        {
+            "message": "The meal does not exist"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Token is  mising!. You need to sign in first"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "User is logged out! You need to sign in again"
+        }
+        
++ Response 401 (application/json)
+
+        {
+          "message": "Token is invalid!. You need to sign in first"
+        }
+
+### Get a single meal option [GET]
+This operation can be performed only by an admin user.
+
++ Request (application/json)
+
+    + Headers
+
+            x-access-token: JWT Token
+
++ Response 200 (application/json)
+
+            
+            {
+                "meal_id": 2,
+                "meal_name": "burger",
+                "meal_category": "snacks",
+                "meal_price": 400.00
+            }
+
++ Response 401 (application/json)
+
+        {
+            "message": "Not authorized to perform this function!"
+        }
+
++ Response 404 (application/json)
+
+        {
+            "message": "The meal does not exist"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Token is  mising!. You need to sign in first"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "User is logged out! You need to sign in again"
+        }
+        
++ Response 401 (application/json)
+
+        {
+          "message": "Token is invalid!. You need to sign in first"
+        }
+
+## Menu Resources [/api/v2/menu]
+
+### Set menu for the day [POST]
+This operation can be performed only by an admin user.
+
++ Request (application/json)
+
+    + Headers
+
+            x-access-token: JWT Token
+    
+    + Body
+            
+            {
+                "meal_name": "burger",
+                "meal_category": "snacks",
+                "meal_price": 400.00
+            }
+
++ Response 200 (application/json)
+
+            {
+                
+                  "message": "Meal added to menu"
+            
+            }
+
++ Response 401 (application/json)
+
+        {
+            "message": "Not authorized to perform this function!"
+        }
+
++ Response 404 (application/json)
+
+        {
+            "message": "Meal not available"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Token is  mising!. You need to sign in first"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "User is logged out! You need to sign in again"
+        }
+        
++ Response 401 (application/json)
+
+        {
+          "message": "Token is invalid!. You need to sign in first"
+        }
+
+### Get menu for the day [GET]
+
++ Request (application/json)
+
+    + Headers
+
+            x-access-token: JWT Token
+
++ Response 200 (application/json)
+
+        [
+            {
+                
+                    2:{
+                        "meal_name": "burger",
+                        "meal_category": "snacks",
+                        "meal_price": 400.00
+                    },3: {
+                       
+                        "meal_name": "pizza",
+                        "meal_category": "main dish",
+                        "meal_price": 900.00
+                    },4:{
+                        
+                        "meal_name": "wine",
+                        "meal_category": "drinks",
+                        "meal_price": 850.00
+                    }, 5:{
+                        
+                        "meal_name": "beef",
+                        "meal_category": "main dish",
+                        "meal_price": 700.00
+                    }
+            }
+        ]
+
++ Response 404 (application/json)
+
+        {
+            "message": "Menu not set yet!"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Token is  mising!. You need to sign in first"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "User is logged out! You need to sign in again"
+        }
+        
++ Response 401 (application/json)
+
+        {
+          "message": "Token is invalid!. You need to sign in first"
+        }
+
+        
+
+## Order Resources [/api/v2/orders]
+
+### Make an order [POST]
+This functionality becomes unavailable between after midnigght and before 8am in the morning
+
++ Request (application/json)
+    
+    + Headers
+
+            x-access-token: JWT Token
+    
+    + Body
+    
+            {
+                "meal_name": "Burger",
+                "quantity": 4
+            }
+
++ Response 200 (application/json)
+
+        {
+            
+            "message": "Order succesfully posted"
+        }
+
++ Response 404 (application/json)
+
+        {
+            "message": "This functionality not available at this time"
+        }
++ Response 400 (application/json)
+
+        {
+            "message": "Missing argument"
+        }
+
++ Response 400 (application/json)
+
+        {
+            "message": "Quantity has to be an integer Number"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Token is  mising!. You need to sign in first"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "User is logged out! You need to sign in again"
+        }
+        
++ Response 401 (application/json)
+
+        {
+          "message": "Token is invalid!. You need to sign in first"
+        }
+
+### Get orders [GET]
+This operation can be performed only by an admin user.
+
++ Request (application/json)
+
+    + Headers
+
+            x-access-token: JWT Token
+
++ Response 200 (application/json)
+
+        [
+           { "peter":{
+            "m_name": "Burger",
+            "quantity": 8
+
+            },
+            "ordered_on": "2015-08-05T08:40:51.620Z"
+            }
+            {
+            "peter":{
+            "meal_name": "Pizza",
+            "quantity": 5
+            
+            },
+            "ordered_on": "2015-08-05T08:40:51.620Z"
+            }
+            {
+            "peter":{
+            "meal_name": "Ugali",
+            "quantity": 6,
+            
+            },
+            "ordered_on": "2015-08-05T08:40:51.620Z"
+            }
+        ]
+
++ Response 401 (application/json)
+
+        {
+            "message": "Not authorized to perform this function!"
+        }
++ Response 404 (application/json)
+
+        {
+            "message": "No order available"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Token is  mising!. You need to sign in first"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "User is logged out! You need to sign in again"
+        }
+        
++ Response 401 (application/json)
+
+        {
+          "message": "Token is invalid!. You need to sign in first"
+        }
+
+    
+### Update a order [PUT]
+This functionality becomes unavailable between after midnigght and before 8am in the morning
+
++ Request (application/json)
+
+    + Headers
+
+            x-access-token: JWT Token
+    
+    + Body
+            
+            {
+                "meal_name": "Cofee",
+                "quantity": 4
+            }
+                    
++ Response 200 (application/json)
+
+            
+            {
+                    "Message": "Order updated"
+                
+            },
+            "peter":{
+            "meal_name": "Cofee",
+            "quantity": 4
+            },
+            "ordered_on": "2015-08-05T08:40:51.620Z"
+            }
+
++ Response 401 (application/json)
+
+        {
+            "message": "Not authorized to perform this function!"
+        }
+
++ Response 404 (application/json)
+
+        {
+            "message": "This functionality not available at this time"
+        }
++ Response 404 (application/json)
+
+        {
+            "message": "The order does not exist"
+        }
+
++ Response 400 (application/json)
+
+        {
+            "message": "You need to provide at least one argument!"
+        }
+
++ Response 400 (application/json)
+
+        {
+            "message": "Quantity has to be a integer number!"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "Token is  mising!. You need to sign in first"
+        }
+
++ Response 401 (application/json)
+
+        {
+          "message": "User is logged out! You need to sign in again"
+        }
+        
++ Response 401 (application/json)
+
+        {
+          "message": "Token is invalid!. You need to sign in first"
+        }
