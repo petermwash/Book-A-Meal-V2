@@ -65,7 +65,7 @@ Book-A-Meal-V2 is an improvement to the previous Book-A-Meal  application. The i
     ```
 
 
-* #### Running It
+* #### Running The App
     Finally, to run the app, on your terminal, run the server using the following command:
     ```
     (venv)$ flask run
@@ -75,6 +75,13 @@ Book-A-Meal-V2 is an improvement to the previous Book-A-Meal  application. The i
     http://localhost:5000/
     ```
 
+* #### Running The Tests
+    Now, to run the tests, just just type the command bellow on your terminal.
+    ```
+    (venv)$ nosetests --with-coverage --cover-package app
+    ```
+
+    
 Enjoy the app 😄
 
 
