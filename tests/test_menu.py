@@ -88,7 +88,7 @@ class MenuTestCase(BaseTest):
 
 
 	def test_get_menu_when_is_set(self):
-		#Test API can get the menu (GET request).
+		"""Test API can get the menu (GET request)."""
 
 		res = self.login_admin_user()
 		access_token = json.loads(res.data.decode())['access_token']
@@ -112,6 +112,78 @@ class MenuTestCase(BaseTest):
 		resp = json.loads(results.data)
 		retn = {'1': {'category': 'Snacks', 'meal_name': 'Burger', 'price': 400.0}}
 		self.assertIn(retn, resp)
+
+	def test_clear_menu(self):
+		"""Test API can clear all the contents in menu (DELETE request)"""
+
+		res = self.login_admin_user()
+		access_token = json.loads(res.data.decode())['access_token']
+
+		response = self.client().post(
+			'/api/v2/meals', 
+				headers={"x-access-token": access_token},
+				data = json.dumps(
+				self.meal_data) , content_type = 'application/json')
+		self.assertEqual(response.status_code, 201)
+
+		response = self.client().post('/api/v2/menu/1',
+			headers={"x-access-token": access_token},
+			data = json.dumps(
+				self.meal_data), content_type = 'application/json')
+		self.assertEqual(response.status_code, 200)
+
+		results = self.client().delete('/api/v2/menu',
+			headers={"x-access-token": access_token})
+		response = json.loads(results.data)
+		self.assertEqual(results.status_code, 200)
+		self.assertEqual(response["message"], "Menu cleared succesfully")
+
+	def test_clear_menu_by_regular_user(self):
+		"""
+		Test API cannot clear all the contents in menu 
+		by regular user(DELETE request)
+		"""
+
+		res = self.login_user()
+		ress = self.login_admin_user()
+		access_token = json.loads(res.data.decode())['access_token']
+		a_access_token = json.loads(ress.data.decode())['access_token']
+
+		response = self.client().post(
+			'/api/v2/meals', 
+				headers={"x-access-token": a_access_token},
+				data = json.dumps(
+				self.meal_data) , content_type = 'application/json')
+		self.assertEqual(response.status_code, 201)
+
+		response = self.client().post('/api/v2/menu/1',
+			headers={"x-access-token": a_access_token},
+			data = json.dumps(
+				self.meal_data), content_type = 'application/json')
+		self.assertEqual(response.status_code, 200)
+
+		results = self.client().delete('/api/v2/menu',
+			headers={"x-access-token": access_token})
+		response = json.loads(results.data)
+		self.assertEqual(results.status_code, 401)
+		self.assertEqual(response["message"], 
+			"Not authorized to perform this function!")
+
+	def test_clear_menu_when_not_set(self):
+		"""
+		Test API cannot clear all the contents in menu 
+		when not set(DELETE request)
+		"""
+
+		res = self.login_admin_user()
+		access_token = json.loads(res.data.decode())['access_token']
+
+		results = self.client().delete('/api/v2/menu',
+			headers={"x-access-token": access_token})
+		response = json.loads(results.data)
+		self.assertEqual(results.status_code, 404)
+		self.assertEqual(response["message"], "Menu not set yet!")
+
 
 	def tearDown(self):
 		"""teardown all initialized variables."""

@@ -161,6 +161,78 @@ class OrderTestCase(BaseTest):
 		result = json.loads(response.data)
 		self.assertEqual(response.status_code, 200)
 
+	def test_order_can_be_deleted_by_owner(self):
+		"""Test API can delete an order (DELETE request)."""
+
+		res = self.login_user()
+		access_token = json.loads(res.data.decode())['access_token']
+
+		response = self.client().post(
+			'/api/v2/orders',
+			headers={"x-access-token": access_token},
+			data = json.dumps(
+				self.order_data) , content_type = 'application/json')
+		self.assertEqual(response.status_code, 201)
+
+		response = self.client().delete(
+			'/api/v2/orders/1',
+			headers={"x-access-token": access_token})
+
+		result = json.loads(response.data)
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(result["message"], "Order deleted succesfully")
+
+	def test_order_cannot_be_deleted_if_not_owner(self):
+		"""
+		Test API cannot delete an order if user not owner 
+		(DELETE request).
+		"""
+
+		res = self.login_user()
+		ress = self.login_admin_user()
+		access_token = json.loads(res.data.decode())['access_token']
+		a_access_token = json.loads(ress.data.decode())['access_token']
+
+		response = self.client().post(
+			'/api/v2/orders',
+			headers={"x-access-token": access_token},
+			data = json.dumps(
+				self.order_data) , content_type = 'application/json')
+		self.assertEqual(response.status_code, 201)
+
+		response = self.client().delete(
+			'/api/v2/orders/1',
+			headers={"x-access-token": a_access_token})
+
+		result = json.loads(response.data)
+		self.assertEqual(response.status_code, 401)
+		self.assertEqual(result["message"], 
+			"Not authorized to perform this function!")
+
+	def test_order_cannot_be_deleted_if_dont_exist(self):
+		"""
+		Test API cannot delete an order if doesn't exist 
+		(DELETE request).
+		"""
+
+		res = self.login_user()
+		access_token = json.loads(res.data.decode())['access_token']
+
+		response = self.client().post(
+			'/api/v2/orders',
+			headers={"x-access-token": access_token},
+			data = json.dumps(
+				self.order_data) , content_type = 'application/json')
+		self.assertEqual(response.status_code, 201)
+
+		response = self.client().delete(
+			'/api/v2/orders/5',
+			headers={"x-access-token": access_token})
+
+		result = json.loads(response.data)
+		self.assertEqual(response.status_code, 404)
+		self.assertEqual(result["message"], "That order is not available")
+
 	def tearDown(self):
 		"""teardown all initialized variables."""
 		with self.app.app_context():

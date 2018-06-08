@@ -44,6 +44,77 @@ class MealTestCase(BaseTest):
 		self.assertEqual(result["message"], "Meal added")
 		self.assertEqual(response.status_code, 201)
 
+	def test_meal_addition_to_meal_options_twice(self):
+		"""Test API cannot add same meal to meal options twice(POST request)"""
+		
+		res = self.login_admin_user()
+		access_token = json.loads(res.data.decode('UTF-8'))['access_token']
+
+		response = self.client().post(
+			'/api/v2/meals', 
+				headers={"x-access-token": access_token},
+				data = json.dumps(
+				self.meal_data) , content_type = 'application/json')
+		self.assertEqual(response.status_code, 201)
+
+		response = self.client().post(
+			'/api/v2/meals', 
+				headers={"x-access-token": access_token},
+				data = json.dumps(
+				self.meal_data) , content_type = 'application/json')
+		
+		result = json.loads(response.data)
+		self.assertEqual(result["message"], "Meal already exists!")
+		self.assertEqual(response.status_code, 202)
+
+	def test_meal_addition_to_meal_options_with_mising_argument(self):
+		"""
+		Test API cannot add a meal to meal options with mising argument 
+		(POST request)
+		"""
+
+		meal_data = {
+					
+					 }
+		
+		res = self.login_admin_user()
+		access_token = json.loads(res.data.decode('UTF-8'))['access_token']
+
+		response = self.client().post(
+			'/api/v2/meals', 
+				headers={"x-access-token": access_token},
+				data = json.dumps(
+				meal_data) , content_type = 'application/json')
+		
+		result = json.loads(response.data)
+		self.assertEqual(result["message"], "Missing argument!")
+		self.assertEqual(response.status_code, 400)
+
+	def test_price_has_to_be_a_float(self):
+		"""
+		Test API cannot add a meal to meal options if price not float 
+		(POST request)
+		"""
+
+		meal_data = {
+					"m_name":"Burger",
+					"category":"Snacks",
+					"price":"400.00"
+					 }
+		
+		res = self.login_admin_user()
+		access_token = json.loads(res.data.decode('UTF-8'))['access_token']
+
+		response = self.client().post(
+			'/api/v2/meals', 
+				headers={"x-access-token": access_token},
+				data = json.dumps(
+				meal_data) , content_type = 'application/json')
+		
+		result = json.loads(response.data)
+		self.assertEqual(result["message"], "Price has to be a float number!")
+		self.assertEqual(response.status_code, 400)
+
 	def test_meal_addition_by_a_regular_user(self):
 		"""Test API cannot add a meal to meal options by regular user (POST request)"""
 
@@ -59,6 +130,20 @@ class MealTestCase(BaseTest):
 		self.assertEqual(result["message"], "Not authorized to perform this function!")
 		self.assertEqual(response.status_code, 401)	
 
+	def test_get_all_meals_by_admin(self):
+		"""Test API can get all meals by admin user (GET request)."""
+		
+		res = self.login_admin_user()
+		access_token = json.loads(res.data.decode())['access_token']
+		
+		response = self.client().get(
+			'/api/v2/meals',
+			headers={"x-access-token": access_token}, 
+			data = json.dumps(
+				self.meal_data), content_type = 'application/json')
+		result = json.loads(response.data)
+		self.assertEqual(response.status_code, 200)
+
 	def test_get_all_meals_by_regular_user(self):
 		"""Test API cannot get all meals by regular user (GET request)."""
 		
@@ -67,7 +152,9 @@ class MealTestCase(BaseTest):
 		
 		response = self.client().get(
 			'/api/v2/meals',
-			headers={"x-access-token": access_token})
+			headers={"x-access-token": access_token}, 
+			data = json.dumps(
+				self.meal_data), content_type = 'application/json')
 		result = json.loads(response.data)
 		self.assertEqual(result["message"], "Not authorized to perform this function!")
 		self.assertEqual(response.status_code, 401)

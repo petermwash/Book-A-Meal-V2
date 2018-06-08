@@ -103,8 +103,83 @@ class UserTestCase(BaseTest):
 			headers={"x-access-token": access_token})
 		
 		result = json.loads(response.data)
-		self.assertEqual(result["message"], "Not authorized to perform this function!")
+		self.assertEqual(result["message"], 
+			"Not authorized to perform this function!")
 		self.assertEqual(response.status_code, 401)
+
+	def test_delete_user_by_admin(self):
+		"""Test API can delete a user by admin (DELETE request)"""
+
+		self.create_a_user()
+
+		res = self.login_admin_user()
+		access_token = json.loads(res.data.decode())['access_token']
+
+		response = self.client().delete(
+			'/api/v2/users/1',
+			headers={"x-access-token": access_token})
+
+		result = json.loads(response.data)
+		self.assertEqual(result["message"], "User deleted!")
+		self.assertEqual(response.status_code, 200)
+
+	def test_delete_user_not_existing(self):
+		"""Test API cannot delete a user not existing (DELETE request)"""
+
+		self.create_a_user()
+
+		res = self.login_admin_user()
+		access_token = json.loads(res.data.decode())['access_token']
+
+		response = self.client().delete(
+			'/api/v2/users/5',
+			headers={"x-access-token": access_token})
+
+		result = json.loads(response.data)
+		self.assertEqual(result["message"], "The user does not exist")
+		self.assertEqual(response.status_code, 404)
+
+	def test_delete_user_by_regular_user(self):
+		"""Test API cannot delete a user by regular user (DELETE request)"""
+
+		res = self.login_user()
+		access_token = json.loads(res.data.decode())['access_token']
+
+		response = self.client().delete(
+			'/api/v2/users/1',
+			headers={"x-access-token": access_token})
+
+		result = json.loads(response.data)
+		self.assertEqual(result["message"], 
+			"Not authorized to perform this function!")
+		self.assertEqual(response.status_code, 401)
+
+	def test_create_initial_super_user(self):
+		"""Test API can create a super user (POST request)"""
+		response = self.client().post(
+			'/api/v2/users')
+
+		result = json.loads(response.data)
+		self.assertEqual(result["message"], "Super User created!")
+		self.assertEqual(response.status_code, 201)
+
+	def test_create_initial_super_user_twice(self):
+		"""
+		Test API cannot create a super user more than once
+		(POST request)
+		"""
+		response = self.client().post(
+			'/api/v2/users')
+		self.assertEqual(response.status_code, 201)
+
+		resp = self.client().post(
+			'/api/v2/users')
+
+		result = json.loads(resp.data)
+		self.assertEqual(result["message"], "Super User already exists!")
+		self.assertEqual(resp.status_code, 202)
+
+
 
 	def tearDown(self):
 		"""teardown all initialized variables."""
