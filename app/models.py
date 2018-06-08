@@ -36,6 +36,10 @@ class User(db.Model):
 		db.session.add(self)
 		db.session.commit()
 
+	def delete(self):
+		db.session.delete(self)
+		db.session.commit()
+
 
 	def __repr__(self):
 		"""Return a representation of a user instance."""
@@ -98,8 +102,11 @@ class Meal(db.Model):
 		return Meal.query.all()
 
 	def delete(self):
-		db.session.delete(self)
-		db.session.commit()
+		try:
+			db.session.delete(self)
+			db.session.commit()
+		except:
+			db.session.rollback()
 
 	def __repr__(self):
 		"""Return a representation of meal instance."""
@@ -128,6 +135,13 @@ class Order(db.Model):
 	def save(self):
 		db.session.add(self)
 		db.session.commit()
+
+	def delete(self):
+		try:
+			db.session.delete(self)
+			db.session.commit()
+		except:
+			db.session.rollback()
 
 	@staticmethod
 	def get_all():
@@ -162,6 +176,13 @@ class Menu(db.Model):
 		
 		db.session.add(self)
 		db.session.commit()
+
+	def clear():
+		try:
+			db.session.query(Menu).delete()
+			db.session.commit()
+		except:
+			db.session.rollback()
 
 	@staticmethod
 	def get_all():

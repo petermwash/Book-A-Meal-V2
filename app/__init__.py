@@ -22,8 +22,17 @@ def create_app(config_name):
 	app.config.from_object(app_config[config_name])
 	app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 	app.config['SECRET_KEY'] = "thisismysupersevrectkeythatyoucannevverguewhatitis"
+	handle_exception = app.handle_exception
+	handle_user_exception = app.handle_user_exception
+	app.handle_exception = handle_exception
 	api = Api(app)
+	app.handle_user_exception = handle_user_exception
+	app.handle_user_exception = handle_user_exception
+	app.register_error_handler(404, lambda err: jsonify(
+		{"message":"Resource does not exist!",
+		"status_code": 404}))
 	db.init_app(app)
+
 
 	def generate_token(public_id, time):
 		token = jwt.encode(
@@ -116,10 +125,6 @@ def create_app(config_name):
 
 			if check_password_hash(current_user.password, password):
 				access_token = generate_token(current_user.public_id, 30)
-				"""
-				access_token = jwt.encode(
-					{'public_id': current_user.public_id, 'exp': datetime.datetime.utcnow()
-					+ datetime.timedelta(minutes=30)}, app.config['SECRET_KEY'])"""
 				response = jsonify({
 					"message": "Logged in as {}".format(current_user.u_name),
 					"access_token": access_token.decode('UTF-8')})
@@ -208,6 +213,49 @@ def create_app(config_name):
 				uzers.append(u)
 
 			response = jsonify(uzers)
+			response.status_code = 200
+			return response
+
+		def post(self):
+			"""
+			Here I'm creating an initial admin user
+			This user can be created only once
+			"""
+
+			users = User.query.all()
+			for user in users:
+				if user.u_name == "Admin" or\
+						user.email == "admin@pemwa.com":
+					response = jsonify({"message": "Super User already exists!"})
+					response.status_code = 202
+					return response
+
+			admin = User(public_id = str(uuid.uuid4()),
+				f_name = "Purity", l_name = "Resian",
+				email = "admin@pemwa.com", u_name = "Admin",
+				password = generate_password_hash("pass", method='sha256'),
+				type_admin = True)
+			admin.save()
+			response = jsonify({"message": "Super User created!"})
+			response.status_code = 201
+			return response
+
+		@token_required
+		def delete(current_user, self, user_id):
+			if not current_user.type_admin:
+				response = jsonify({"message": "Not authorized to perform this function!"})
+				response.status_code = 401
+				return response
+			
+			user = User.query.filter_by(id=user_id).first()
+			if not user:
+				response = jsonify({"message": "The user does not exist"})
+				response.status_code = 404
+				return response
+
+			user.delete()
+
+			response = jsonify({"message": "User deleted!"})
 			response.status_code = 200
 			return response
 			
@@ -352,7 +400,7 @@ def create_app(config_name):
 			for meal in meals:
 				if meal.m_name == m_name:
 					response = jsonify({"message": "Meal already exists!"})
-					response.status_code = 405
+					response.status_code = 202
 					return response
 
 			meal = Meal(m_name, category, price)
@@ -455,12 +503,11 @@ def create_app(config_name):
 			return response
 
 	class OrderEndpoints(Resource):
-		"""This class contains resources for maniputating orders"""
+		"""This class contains resources for manipulating orders"""
 
 		@token_required
 		def post(current_user, self):
 			
-			#owner = request.json.get('owner')
 			meal_name = request.json.get('meal_name')
 			quantity = request.json.get('quantity')
 
@@ -486,8 +533,8 @@ def create_app(config_name):
 				response.status_code = 400
 				return response
 
-			owner = current_user.u_name
-			order = Order(meal_name, quantity, owner)
+			owner = User.query.filter_by(u_name=current_user.u_name).first()
+			order = Order(meal_name, quantity, owner.u_name)
 			order.save()
 
 			response = jsonify({"message": "Order succesfully posted"})
@@ -511,6 +558,7 @@ def create_app(config_name):
 
 			for order in orders:	
 				meal_obj = {order.owner: {
+										'id': order.id,
 										'meal_name': order.meal_name,
 										'quantity': order.quantity
 										},
@@ -529,11 +577,6 @@ def create_app(config_name):
 			me = User.query.filter_by(u_name=current_user.u_name).first()
 			order = Order.query.filter_by(id=order_id).first()
 
-			if me.u_name != order.owner:
-				response = jsonify({"message": "Not authorized to perform this function!"})
-				response.status_code = 401
-				return response
-
 			today8am = datetime.datetime.now().replace(
 				hour=8, minute=0, second=0, microsecond=0)
 			today12am = datetime.datetime.now().replace(
@@ -545,7 +588,12 @@ def create_app(config_name):
 					)
 				response.status_code = 404
 				return response
-			
+
+			if me.u_name != order.owner:
+				response = jsonify({"message": "Not authorized to perform this function!"})
+				response.status_code = 401
+				return response
+
 			if not order:
 				response = jsonify({"message": "That order is not available"})
 				response.status_code = 404
@@ -575,6 +623,7 @@ def create_app(config_name):
 
 			response = jsonify({"message": "Order updated"},
 				{order.owner: {
+										'id': order.id,
 										'meal_name': order.meal_name,
 										'quantity': order.quantity
 										},
@@ -584,10 +633,49 @@ def create_app(config_name):
 			response.status_code = 200
 			return response
 
+		@token_required
+		def delete(current_user, self, order_id):
+			
+			me = User.query.filter_by(u_name=current_user.u_name).first()
+			order = Order.query.filter_by(id=order_id).first()
+
+			today8am = datetime.datetime.now().replace(
+				hour=8, minute=0, second=0, microsecond=0)
+			today12am = datetime.datetime.now().replace(
+				hour=0, minute=0, second=0, microsecond=0)
+			if datetime.datetime.now() > today12am and\
+					datetime.datetime.now() < today8am:
+				response = jsonify(
+					{"message": "This functionality not available at this time"}
+					)
+				response.status_code = 404
+				return response
+
+			if not order:
+				response = jsonify({"message": "That order is not available"})
+				response.status_code = 404
+				return response
+
+			if me.u_name != order.owner:
+				response = jsonify({"message": "Not authorized to perform this function!"})
+				response.status_code = 401
+				return response
+
+			try:
+				order.delete()
+				response = jsonify({"message": "Order deleted succesfully"})
+				response.status_code = 200
+				return response
+
+			except Exception as e:
+				response = jsonify({"message": e})
+				response.status_code = 200
+				return response
+
 
 	class MenuEndpoints(Resource):
 
-		"""This class contains resources for maniputating the menu"""
+		"""This class contains resources for manipulating the menu"""
 
 		@token_required
 		def get(current_user, self):
@@ -595,7 +683,7 @@ def create_app(config_name):
 				menu = Menu.get_all()
 
 				if not menu:
-					response = jsonify({"message": "No meals available  in menu!"})
+					response = jsonify({"message": "Menu not set yet!"})
 					response.status_code = 404
 					return response
 
@@ -636,6 +724,31 @@ def create_app(config_name):
 			response.status_code = 200
 			return response
 
+		@token_required
+		def delete(current_user, self):
+			"""Clear all the contents in menu"""
+
+			if not current_user.type_admin:
+				response = jsonify({"message": "Not authorized to perform this function!"})
+				response.status_code = 401
+				return response
+
+			menu = Menu.get_all()
+			if not menu:
+				response = jsonify({"message": "Menu not set yet!"})
+				response.status_code = 404
+				return response
+			try:
+				Menu.clear()
+				response = jsonify({"message": "Menu cleared succesfully"})
+				response.status_code = 200
+				return response
+
+			except Exception as e:
+				response = jsonify({"message": e})
+				response.status_code = 200
+				return response
+
 	api.add_resource(UserSignup, '/api/v2/auth/signup')
 	api.add_resource(UserSignin, '/api/v2/auth/login')
 	api.add_resource(Meals, '/api/v2/meals')
@@ -643,7 +756,7 @@ def create_app(config_name):
 	api.add_resource(MenuEndpoints, '/api/v2/menu', '/api/v2/menu/<int:meal_id>')
 	api.add_resource(OrderEndpoints, '/api/v2/orders', '/api/v2/orders/<int:order_id>')
 	api.add_resource(UpgradeUser, '/api/v2/upgrade/<int:id>')
-	api.add_resource(Users, '/api/v2/users')
+	api.add_resource(Users, '/api/v2/users', '/api/v2/users/<int:user_id>')
 	api.add_resource(UserLogout, '/api/v2/auth/logout')
 	api.add_resource(ChangePasswordAPI, '/api/v2/auth/changepass')
 	api.add_resource(ForgetPasswordAPI, '/api/v2/auth/resetpass')
