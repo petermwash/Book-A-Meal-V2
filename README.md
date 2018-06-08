@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.com/petermwash/Book-A-Meal-V2.svg?branch=ft-api)](https://travis-ci.com/petermwash/Book-A-Meal-V2)
 [![Coverage Status](https://coveralls.io/repos/github/petermwash/Book-A-Meal-V2/badge.svg?branch=ft-api)](https://coveralls.io/github/petermwash/Book-A-Meal-V2?branch=ft-api)
+[![PEP8](https://img.shields.io/badge/code%20style-pep8-orange.svg)](https://www.python.org/dev/peps/pep-0008/)
 
 # Book-A-Meal-V2
 Book-A-Meal-V2 is an improvement to the previous Book-A-Meal  application. The improvement is that, the API are secured with JWT and fetches real data from database. It is an application that allows customers to make food orders and helps the food vendor know what the customers want to eat.
