@@ -7,7 +7,7 @@ class Config(object):
 	DEBUG = False
 	CSRF_ENABLED = True
 	SECRET = "thisismysupersevrectkeythatyoucannevverguewhatitis" #os.getenv('SECRET')
-	SQLALCHEMY_DATABASE_URI = "postgresql://postgres:mangu14167@localhost/book_a_meal" #os.getenv('DATABASE_URL')
+	SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
 
 class DevelopmentConfig(Config):
 	"""
