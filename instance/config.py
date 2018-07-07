@@ -14,6 +14,7 @@ class DevelopmentConfig(Config):
 	This class contains configurations for Development
 	"""
 	DEBUG = True
+	SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:mangu14167@localhost/book_a_meal'
 
 class TestingConfig(Config):
 	"""
