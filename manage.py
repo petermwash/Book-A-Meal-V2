@@ -6,10 +6,13 @@ from flask_migrate import Migrate, MigrateCommand
 from app import db, create_app
 from app import models
 
-app = create_app(config_name='development')
-manager = Manager(app)
-migrate = Migrate(app, db)
+MIGRATION_DIR = os.path.join('models', 'migrations')
 
+app = create_app(config_name='development')
+
+migrate = Migrate(app, db, directory=MIGRATION_DIR)
+
+manager = Manager(app)
 
 manager.add_command('db', MigrateCommand)
 
