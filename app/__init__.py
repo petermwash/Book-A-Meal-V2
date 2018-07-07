@@ -22,6 +22,7 @@ def create_app(config_name):
 	from app.models import User, Meal, Order, Menu, BlacklistToken
 
 	app = FlaskAPI(__name__, instance_relative_config=True)
+	CORS(app)
 	app.config.from_object(app_config[config_name])
 	app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 	app.config['SECRET_KEY'] = os.getenv('SECRET')
