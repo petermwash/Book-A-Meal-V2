@@ -8,6 +8,7 @@ from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import random
 from flask_cors import CORS
+import os
 
 """here are my local imports"""
 from instance.config import app_config
@@ -21,8 +22,9 @@ def create_app(config_name):
 
 	app = Flask(__name__)
 	app.config.from_object(app_config[config_name])
+	#app.config.from_pyfile('config.py')
 	app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-	app.config['SECRET_KEY'] = "thisismysupersevrectkeythatyoucannevverguewhatitis"
+	app.config['SECRET_KEY'] = os.getenv('SECRET')
 	handle_exception = app.handle_exception
 	handle_user_exception = app.handle_user_exception
 	app.handle_exception = handle_exception
