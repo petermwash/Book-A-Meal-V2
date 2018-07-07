@@ -7,6 +7,7 @@ import datetime
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import random
+from flask_cors import CORS
 
 """here are my local imports"""
 from instance.config import app_config
