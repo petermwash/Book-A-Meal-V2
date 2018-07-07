@@ -7,8 +7,9 @@ from app import db, create_app
 from app import models
 
 app = create_app(config_name='development')
-migrate = Migrate(app, db)
 manager = Manager(app)
+migrate = Migrate(app, db)
+
 
 manager.add_command('db', MigrateCommand)
 
