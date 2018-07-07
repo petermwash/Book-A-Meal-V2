@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from flask_api import FlaskAPI
 from flask import Flask, request, jsonify, abort
 from flask_restful import Resource, Api
 import uuid
@@ -20,9 +21,8 @@ db = SQLAlchemy()
 def create_app(config_name):
 	from app.models import User, Meal, Order, Menu, BlacklistToken
 
-	app = Flask(__name__)
+	app = FlaskAPI(__name__, instance_relative_config=True)
 	app.config.from_object(app_config[config_name])
-	#app.config.from_pyfile('config.py')
 	app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 	app.config['SECRET_KEY'] = os.getenv('SECRET')
 	handle_exception = app.handle_exception
